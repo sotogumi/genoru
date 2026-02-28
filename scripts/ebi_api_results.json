@@ -1,0 +1,36 @@
+{
+  "ena_search": {
+    "api": "ENA Text Search",
+    "url": "https://www.ebi.ac.uk/ena/portal/api/search",
+    "params": {
+      "result": "sequence",
+      "query": "sequence=\"ATGCTAGCTAGCTAGCTAGCTAGCTAGCTA\"",
+      "fields": "accession,description,base_count",
+      "limit": 10,
+      "format": "tsv"
+    },
+    "status": "error",
+    "response": null,
+    "accessions": [],
+    "error": "HTTP Error 500: "
+  },
+  "ena_fetch": {
+    "api": "ENA FASTA Fetch",
+    "status": "skipped",
+    "records": [],
+    "error": "検索結果が 0 件"
+  },
+  "ena_summary": {
+    "api": "ENA XML Fetch",
+    "status": "skipped",
+    "records": [],
+    "error": "検索結果が 0 件"
+  },
+  "ebi_blast": {
+    "api": "EBI NCBI BLAST+",
+    "status": "error",
+    "job_id": null,
+    "hits": [],
+    "error": "ジョブ投入失敗: HTTP Error 400: Bad Request"
+  }
+}
