@@ -300,8 +300,8 @@ def _print_hits(hits: list, root, title: str, show_top_n: int = 10) -> None:
         log("ヒットなし")
         return
 
-    # 一致率でソート (高い順)
-    hit_data.sort(key=lambda x: (x["identity_pct"], x["coverage"]), reverse=True)
+    # カバレッジ(高い順) → 一致率(高い順) でソート
+    hit_data.sort(key=lambda x: (x["coverage"], x["identity_pct"]), reverse=True)
 
     # 完全一致があるか確認
     perfect = [h for h in hit_data if h["identity_pct"] >= 100.0 and h["coverage"] >= 100.0]
