@@ -319,7 +319,7 @@ class ResultScreen extends StatelessWidget {
     return buffer.toString();
   }
 
-  /// 各塩基の割合を表示するウィジェット
+  /// 各塩基の割合を 2×2 グリッドで表示
   Widget _buildComposition(BuildContext context) {
     final total = dnaSequence.length;
     final counts = {'A': 0, 'T': 0, 'G': 0, 'C': 0};
@@ -328,84 +328,57 @@ class ResultScreen extends StatelessWidget {
     }
 
     const baseColors = {
-      'A': Color(0xFF4CAF50), // 緑
-      'T': Color(0xFFFF7043), // オレンジ
-      'G': Color(0xFF42A5F5), // 青
-      'C': Color(0xFFAB47BC), // 紫
+      'A': Color(0xFF4CAF50),
+      'T': Color(0xFFFF7043),
+      'G': Color(0xFF42A5F5),
+      'C': Color(0xFFAB47BC),
     };
 
-    return Column(
-      children:
-          ['A', 'T', 'G', 'C'].map((base) {
-            final count = counts[base]!;
-            final ratio = total > 0 ? count / total : 0.0;
-            return _buildBaseRow(
-              context,
-              base: base,
-              count: count,
-              ratio: ratio,
-              color: baseColors[base]!,
-            );
-          }).toList(),
-    );
-  }
-
-  Widget _buildBaseRow(
-    BuildContext context, {
-    required String base,
-    required int count,
-    required double ratio,
-    required Color color,
-  }) {
-    final pct = (ratio * 100).toStringAsFixed(1);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
+    Widget cell(String base) {
+      final ratio = total > 0 ? counts[base]! / total : 0.0;
+      final pct = (ratio * 100).toStringAsFixed(1);
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 塩基ラベル
-          SizedBox(
-            width: 28,
-            child: Text(
-              base,
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                fontFamily: 'monospace',
-              ),
+          Text(
+            base,
+            style: TextStyle(
+              color: baseColors[base],
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'monospace',
             ),
           ),
-          const SizedBox(width: 8),
-          // プログレスバー
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: SizedBox(
-                height: 12,
-                child: LinearProgressIndicator(
-                  value: ratio,
-                  backgroundColor: AppTheme.cardDark,
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // パーセント
-          SizedBox(
-            width: 56,
-            child: Text(
-              '$pct%',
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: AppTheme.textSecondary.withValues(alpha: 0.9),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+          const SizedBox(width: 6),
+          Text(
+            '$pct%',
+            style: TextStyle(
+              color: AppTheme.textSecondary.withValues(alpha: 0.9),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
-      ),
+      );
+    }
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: Center(child: cell('A'))),
+            Expanded(child: Center(child: cell('T'))),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: Center(child: cell('G'))),
+            Expanded(child: Center(child: cell('C'))),
+          ],
+        ),
+      ],
     );
   }
 
