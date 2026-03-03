@@ -178,6 +178,66 @@ class ResultScreen extends StatelessWidget {
                           ),
                         ),
 
+                        const SizedBox(height: 32),
+
+                        // ── 似ている塩基配列を探すボタン ──
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppTheme.primaryGreen,
+                                  AppTheme.accentCyan,
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primaryGreen.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                // TODO: NCBI BLAST 検索を実装する
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('この機能は準備中です'),
+                                    backgroundColor: AppTheme.surfaceDark,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.search_rounded, size: 22),
+                              label: const Text(
+                                '似ている塩基配列を探す',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
                         const SizedBox(height: 40),
                       ],
                     ),
