@@ -12,7 +12,7 @@ class InputScreen extends StatefulWidget {
 class _InputScreenState extends State<InputScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
-  final int _maxLength = 200;
+  final int _maxLength = 100;
   String? _errorText;
   bool _isButtonEnabled = false;
 
@@ -172,7 +172,7 @@ class _InputScreenState extends State<InputScreen>
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                '文字列を入力',
+                                'DNAに変換したい文字列を入力',
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineMedium
@@ -311,7 +311,7 @@ class _InputScreenState extends State<InputScreen>
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              '個人情報は入力しないでください。\n同じ文字列は同じDNA配列に変換されます。',
+                              '個人情報は入力しないでください。',
                               style: TextStyle(
                                 color: AppTheme.textSecondary.withValues(
                                   alpha: 0.8,
