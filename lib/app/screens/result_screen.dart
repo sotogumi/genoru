@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:genoru/app/screens/search_loading_screen.dart';
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
@@ -205,15 +206,12 @@ class ResultScreen extends StatelessWidget {
                             ),
                             child: ElevatedButton.icon(
                               onPressed: () {
-                                // TODO: NCBI BLAST 検索を実装する
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('この機能は準備中です'),
-                                    backgroundColor: AppTheme.surfaceDark,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => SearchLoadingScreen(
+                                          dnaSequence: dnaSequence,
+                                        ),
                                   ),
                                 );
                               },
