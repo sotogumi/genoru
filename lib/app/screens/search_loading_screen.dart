@@ -119,6 +119,10 @@ class _SearchLoadingScreenState extends State<SearchLoadingScreen>
       setState(() {
         _currentMessageIndex = 4; // '結果を取得中…'
       });
+      // 3. 結果の取得とパース
+      setState(() {
+        _currentMessageIndex = 4; // '結果を取得中…'
+      });
       final results = await apiService.getResults(jobId);
       if (!mounted) return;
 
@@ -134,17 +138,15 @@ class _SearchLoadingScreenState extends State<SearchLoadingScreen>
       );
     } catch (e) {
       if (!mounted) return;
-      // エラー時の処理（スナックバーで通知して元の画面に戻る等）
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('検索中にエラーが発生しました:\n$e'),
-          backgroundColor: AppTheme.errorRed,
-          duration: const Duration(seconds: 5),
-        ),
-      );
-      Navigator.of(context).pop();
+      setState(() {
+        _errorOccurred = true;
+        _errorMessage = e.toString();
+      });
     }
   }
+
+  bool _errorOccurred = false;
+  String _errorMessage = '';
 
   @override
   void dispose() {
@@ -156,6 +158,81 @@ class _SearchLoadingScreenState extends State<SearchLoadingScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_errorOccurred) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            const DnaBackground(),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppTheme.errorRed,
+                      size: 80,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      '現在こちらの検索はできません',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'APIのメンテナンス中、もしくは一時的なエラーが発生しています。時間をおいて再度お試しください。\n\n詳細: $_errorMessage',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        icon: const Icon(Icons.arrow_back_rounded, size: 22),
+                        label: const Text(
+                          '戻る',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.accentCyan,
+                          side: BorderSide(
+                            color: AppTheme.accentCyan.withValues(alpha: 0.5),
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       body: Stack(
         children: [
