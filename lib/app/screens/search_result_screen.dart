@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
@@ -42,13 +41,13 @@ class SearchResultScreen extends StatelessWidget {
       coverage: 99.0,
       eValue: 1e-120,
     ),
-    SearchResultItem(
-      accession: 'NM_001082186.1',
-      title: 'Mus musculus BRCA2 DNA repair associated (BRCA2), mRNA',
-      identity: 85.2,
-      coverage: 92.5,
-      eValue: 2e-75,
-    ),
+    // SearchResultItem(
+    //   accession: 'NM_001082186.1',
+    //   title: 'Mus musculus BRCA2 DNA repair associated (BRCA2), mRNA',
+    //   identity: 85.2,
+    //   coverage: 92.5,
+    //   eValue: 2e-75,
+    // ),
   ];
 
   @override
@@ -102,11 +101,14 @@ class SearchResultScreen extends StatelessWidget {
                 // ── 結果リスト ──
                 Expanded(
                   child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 16,
                     ),
-                    itemCount: _mockResults.length + 1, // +1 for the header
+                    itemCount:
+                        _mockResults.length +
+                        2, // +1 for the header, +1 for the footer
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return Padding(
@@ -134,6 +136,44 @@ class SearchResultScreen extends StatelessWidget {
                                 ),
                               ),
                             ],
+                          ),
+                        );
+                      }
+
+                      if (index == _mockResults.length + 1) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 16, bottom: 40),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(
+                                  context,
+                                ).popUntil((route) => route.isFirst);
+                              },
+                              icon: const Icon(Icons.home_rounded, size: 22),
+                              label: const Text(
+                                '最初の画面に戻る',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.accentCyan,
+                                side: BorderSide(
+                                  color: AppTheme.accentCyan.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                            ),
                           ),
                         );
                       }
