@@ -22,33 +22,13 @@ class SearchResultItem {
 /// BLAST検索結果を表示する画面
 class SearchResultScreen extends StatelessWidget {
   final String searchSequence;
+  final List<SearchResultItem> results;
 
-  SearchResultScreen({super.key, required this.searchSequence});
-
-  // モックデータ
-  final List<SearchResultItem> _mockResults = [
-    SearchResultItem(
-      accession: 'NM_000059.4',
-      title: 'Homo sapiens BRCA2 DNA repair associated (BRCA2), mRNA',
-      identity: 100.0,
-      coverage: 100.0,
-      eValue: 0.0,
-    ),
-    SearchResultItem(
-      accession: 'NM_001006610.1',
-      title: 'Pan troglodytes BRCA2 DNA repair associated (BRCA2), mRNA',
-      identity: 98.5,
-      coverage: 99.0,
-      eValue: 1e-120,
-    ),
-    // SearchResultItem(
-    //   accession: 'NM_001082186.1',
-    //   title: 'Mus musculus BRCA2 DNA repair associated (BRCA2), mRNA',
-    //   identity: 85.2,
-    //   coverage: 92.5,
-    //   eValue: 2e-75,
-    // ),
-  ];
+  const SearchResultScreen({
+    super.key,
+    required this.searchSequence,
+    required this.results,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +87,7 @@ class SearchResultScreen extends StatelessWidget {
                       vertical: 16,
                     ),
                     itemCount:
-                        _mockResults.length +
+                        results.length +
                         2, // +1 for the header, +1 for the footer
                     itemBuilder: (context, index) {
                       if (index == 0) {
@@ -117,7 +97,7 @@ class SearchResultScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${_mockResults.length} 件の類似配列が見つかりました',
+                                '${results.length} 件の類似配列が見つかりました',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.headlineMedium?.copyWith(
@@ -140,7 +120,7 @@ class SearchResultScreen extends StatelessWidget {
                         );
                       }
 
-                      if (index == _mockResults.length + 1) {
+                      if (index == results.length + 1) {
                         return Padding(
                           padding: const EdgeInsets.only(top: 16, bottom: 40),
                           child: SizedBox(
@@ -178,7 +158,7 @@ class SearchResultScreen extends StatelessWidget {
                         );
                       }
 
-                      final item = _mockResults[index - 1];
+                      final item = results[index - 1];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: _buildResultCard(context, item: item),

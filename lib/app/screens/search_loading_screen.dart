@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:genoru/app/screens/search_result_screen.dart';
+import 'package:genoru/app/services/blast_api_service.dart';
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
@@ -66,21 +67,83 @@ class _SearchLoadingScreenState extends State<SearchLoadingScreen>
       }
     });
 
-    // TODO: ここで実際の BLAST 検索を開始し、完了したら結果画面へ遷移
-    _simulateSearchAndNavigate();
+    _startBlastSearch();
   }
 
-  Future<void> _simulateSearchAndNavigate() async {
-    // API接続の代わりにダミーの待機時間を設ける
-    await Future.delayed(const Duration(seconds: 4));
+  Future<void> _startBlastSearch() async {
+    try {
+      final apiService = BlastApiService();
 
-    if (!mounted) return;
+      setState(() {
+        _currentMessageIndex = 0; // 'NCBI データベースに接続中…'
+      });
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => SearchResultScreen(searchSequence: widget.dnaSequence),
-      ),
-    );
+      // 1. ジョブを送信
+      setState(() {
+        _currentMessageIndex = 1; // '塩基配列を送信中…'
+      });
+      final jobId = await apiService.submitJob(widget.dnaSequence);
+      if (!mounted) return;
+
+      // 2. ステータスポーリング
+      setState(() {
+        _currentMessageIndex = 2; // 'BLAST 検索を実行中…'
+      });
+
+      String status = '';
+      int retryCount = 0;
+      const maxRetries = 60; // 60 * 5s = 5分
+
+      while (retryCount < maxRetries) {
+        await Future.delayed(const Duration(seconds: 5));
+        if (!mounted) return;
+
+        status = await apiService.checkStatus(jobId);
+
+        if (status == 'FINISHED') {
+          break;
+        } else if (status == 'ERROR' ||
+            status == 'FAILURE' ||
+            status == 'NOT_FOUND') {
+          throw Exception('BLAST job failed with status: $status');
+        }
+
+        retryCount++;
+      }
+
+      if (status != 'FINISHED') {
+        throw Exception('BLAST job timed out');
+      }
+
+      // 3. 結果の取得とパース
+      setState(() {
+        _currentMessageIndex = 4; // '結果を取得中…'
+      });
+      final results = await apiService.getResults(jobId);
+      if (!mounted) return;
+
+      // 4. 結果画面へ遷移
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder:
+              (_) => SearchResultScreen(
+                searchSequence: widget.dnaSequence,
+                results: results,
+              ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      // エラー時の処理（スナックバーで通知して元の画面に戻る等）
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('検索中にエラーが発生しました:\n$e'),
+          backgroundColor: AppTheme.errorRed,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+      Navigator.of(context).pop();
+    }
   }
 
   @override
