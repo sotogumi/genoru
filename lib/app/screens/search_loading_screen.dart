@@ -74,56 +74,49 @@ class _SearchLoadingScreenState extends State<SearchLoadingScreen>
     try {
       final apiService = BlastApiService();
 
-      setState(() {
-        _currentMessageIndex = 0; // 'NCBI データベースに接続中…'
-      });
+      Future<List<SearchResultItem>> runBlast({bool isRelaxed = false}) async {
+        final jobId = await apiService.submitJob(
+          widget.dnaSequence,
+          isRelaxed: isRelaxed,
+        );
+        if (!mounted) return [];
 
-      // 1. ジョブを送信
-      setState(() {
-        _currentMessageIndex = 1; // '塩基配列を送信中…'
-      });
-      final jobId = await apiService.submitJob(widget.dnaSequence);
-      if (!mounted) return;
+        int retryCount = 0;
+        const maxRetries = 40; // 40 * 15s = 10分 (NCBIのジョブキューはより長いため)
+        String status = '';
 
-      // 2. ステータスポーリング
-      setState(() {
-        _currentMessageIndex = 2; // 'BLAST 検索を実行中…'
-      });
+        while (retryCount < maxRetries) {
+          await Future.delayed(const Duration(seconds: 15)); // NCBI推奨のポーリング間隔
+          if (!mounted) return [];
 
-      String status = '';
-      int retryCount = 0;
-      const maxRetries = 60; // 60 * 5s = 5分
-
-      while (retryCount < maxRetries) {
-        await Future.delayed(const Duration(seconds: 5));
-        if (!mounted) return;
-
-        status = await apiService.checkStatus(jobId);
-
-        if (status == 'FINISHED') {
-          break;
-        } else if (status == 'ERROR' ||
-            status == 'FAILURE' ||
-            status == 'NOT_FOUND') {
-          throw Exception('BLAST job failed with status: $status');
+          status = await apiService.checkStatus(jobId);
+          if (status == 'FINISHED') break;
+          if (status == 'ERROR' ||
+              status == 'FAILURE' ||
+              status == 'NOT_FOUND') {
+            throw Exception('BLAST job failed with status: $status');
+          }
+          retryCount++;
         }
 
-        retryCount++;
+        if (status != 'FINISHED') throw Exception('BLAST job timed out');
+
+        if (!mounted) return [];
+        return await apiService.getResults(
+          jobId,
+          queryLen: widget.dnaSequence.length,
+        );
       }
 
-      if (status != 'FINISHED') {
-        throw Exception('BLAST job timed out');
+      var results = await runBlast(isRelaxed: false);
+      if (!mounted) return;
+
+      if (results.isEmpty) {
+        // 通常検索でヒットなしの場合、短い配列でもヒットしやすいよう設定を緩和して再検索 (ncbi_api_test.py 準拠)
+        await Future.delayed(const Duration(seconds: 5));
+        results = await runBlast(isRelaxed: true);
       }
 
-      // 3. 結果の取得とパース
-      setState(() {
-        _currentMessageIndex = 4; // '結果を取得中…'
-      });
-      // 3. 結果の取得とパース
-      setState(() {
-        _currentMessageIndex = 4; // '結果を取得中…'
-      });
-      final results = await apiService.getResults(jobId);
       if (!mounted) return;
 
       // 4. 結果画面へ遷移
