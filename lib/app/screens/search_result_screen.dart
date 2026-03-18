@@ -32,6 +32,9 @@ class SearchResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final int displayCount = results.length > 10 ? 10 : results.length;
+    final bool hasMoreThan10 = results.length >= 10;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -87,7 +90,7 @@ class SearchResultScreen extends StatelessWidget {
                       vertical: 16,
                     ),
                     itemCount:
-                        results.length +
+                        displayCount +
                         2, // +1 for the header, +1 for the footer
                     itemBuilder: (context, index) {
                       if (index == 0) {
@@ -97,7 +100,9 @@ class SearchResultScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${results.length} 件の類似配列が見つかりました',
+                                hasMoreThan10
+                                    ? '10件以上の類似配列が見つかりました\n上位10件を表示します'
+                                    : '${results.length}件の類似配列が見つかりました',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.headlineMedium?.copyWith(
@@ -120,7 +125,7 @@ class SearchResultScreen extends StatelessWidget {
                         );
                       }
 
-                      if (index == results.length + 1) {
+                      if (index == displayCount + 1) {
                         return Padding(
                           padding: const EdgeInsets.only(top: 16, bottom: 40),
                           child: SizedBox(

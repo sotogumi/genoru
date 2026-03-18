@@ -170,7 +170,7 @@ class BlastApiService {
     } catch (e) {
       print('XML parsing error: $e');
     }
-
+    // 全件を返し、表示側で上位10件に絞る
     return hits;
   }
 }
