@@ -148,16 +148,19 @@ class BlastApiService {
 
           final identityPct = alignLen > 0 ? (identity / alignLen) * 100 : 0.0;
           final coverage = queryLen > 0 ? (alignLen / queryLen) * 100 : 0.0;
+          final clampedCoverage = coverage.clamp(0.0, 100.0);
 
-          hits.add(
-            SearchResultItem(
-              accession: accession,
-              title: title,
-              identity: identityPct,
-              coverage: coverage.clamp(0.0, 100.0), // gapにより100を超える場合への対処
-              eValue: evalue,
-            ),
-          );
+          if (clampedCoverage >= 80.0) {
+            hits.add(
+              SearchResultItem(
+                accession: accession,
+                title: title,
+                identity: identityPct,
+                coverage: clampedCoverage, // gapにより100を超える場合への対処
+                eValue: evalue,
+              ),
+            );
+          }
         }
       }
 
