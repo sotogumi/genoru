@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
@@ -225,6 +227,15 @@ class SearchResultScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              IconButton(
+                icon: const Icon(
+                  Icons.info_outline,
+                  color: AppTheme.accentCyan,
+                ),
+                onPressed:
+                    () => _showWikipediaDetailsDialog(context, item.title),
+                tooltip: '詳細を見る',
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -285,6 +296,114 @@ class SearchResultScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _showWikipediaDetailsDialog(
+    BuildContext context,
+    String title,
+  ) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (ctx) => const Center(
+            child: CircularProgressIndicator(color: AppTheme.accentCyan),
+          ),
+    );
+
+    try {
+      // 翻訳された生物名をそのまま利用してWikipediaを検索
+      final url = Uri.parse(
+        'https://ja.wikipedia.org/api/rest_v1/page/summary/${Uri.encodeComponent(title)}',
+      );
+      final response = await http.get(url);
+
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Loadingを閉じる
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final description = data['extract'] ?? '詳細な説明が見つかりませんでした。';
+        final imageUrl = data['thumbnail']?['source'];
+        _showDetailsPopup(context, title, description, imageUrl);
+      } else {
+        _showDetailsPopup(
+          context,
+          title,
+          'Wikipediaに該当する生体情報が見つかりませんでした。',
+          null,
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+      _showDetailsPopup(context, title, '情報の取得に失敗しました。', null);
+    }
+  }
+
+  void _showDetailsPopup(
+    BuildContext context,
+    String title,
+    String description,
+    String? imageUrl,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: AppTheme.surfaceDark,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (imageUrl != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          imageUrl,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      height: 1.6,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text(
+                  '閉じる',
+                  style: TextStyle(
+                    color: AppTheme.accentCyan,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
     );
   }
 
