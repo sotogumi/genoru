@@ -151,7 +151,7 @@ class BlastApiService {
           final coverage = queryLen > 0 ? (alignLen / queryLen) * 100 : 0.0;
           final clampedCoverage = coverage.clamp(0.0, 100.0);
 
-          if (clampedCoverage >= 80.0) {
+          if (clampedCoverage >= 80.0 && identityPct >= 80.0) {
             hits.add(
               SearchResultItem(
                 accession: accession,
@@ -165,30 +165,71 @@ class BlastApiService {
         }
       }
 
-      // 1. まず全件をカバレッジで降順にソート（同率なら一致率降順）
+      // ステップ1: カバレッジが高い順に並べる
       hits.sort((a, b) {
         final compCoverage = b.coverage.compareTo(a.coverage);
         if (compCoverage != 0) return compCoverage;
         return b.identity.compareTo(a.identity);
       });
 
-      // 2. 上位最大10件を取り出し、その中では一致率が高い順（同率ならカバレッジ降順）にソート
-      final topHitsCount = hits.length > 10 ? 10 : hits.length;
-      final topHits = hits.sublist(0, topHitsCount);
-      topHits.sort((a, b) {
+      // ステップ2: 80%未満排除（パース時に if で処理済み）
+
+      // ステップ3: 残ったものの中で一致率が高い順に並べる
+      hits.sort((a, b) {
         final compIdentity = b.identity.compareTo(a.identity);
         if (compIdentity != 0) return compIdentity;
         return b.coverage.compareTo(a.coverage);
       });
 
-      // 3. ソートし直した上位10件を元のリストの先頭に反映
-      hits.replaceRange(0, topHitsCount, topHits);
+      // ステップ4: 生物名が重なっているものは一番最初のもの（= 一致率最高）のみ残し、あとは排除する
+      final uniqueHits = <SearchResultItem>[];
+      final seenTitles = <String>{};
 
-      // 4. 上位最大10件のみ表示用に日本語へ翻訳（APIに過負荷をかけないため）
-      for (int i = 0; i < topHitsCount; i++) {
-        final translated = await _translateToJapanese(hits[i].title);
-        hits[i].title = translated;
+      for (final item in hits) {
+        String cleanTitle = item.title;
+
+        // ゲノムアセンブリなどの文言をカット
+        final stopWords = [
+          ' chromosome',
+          ' isolate',
+          ',',
+          ' genome assembly',
+          ' complete genome',
+          ' dna',
+          ' mrna',
+          ' grch',
+          ' clone',
+          ' mutant',
+          ' strain',
+        ];
+
+        for (final word in stopWords) {
+          final lowerTitle = cleanTitle.toLowerCase();
+          final idx = lowerTitle.indexOf(word);
+          if (idx != -1) {
+            cleanTitle = cleanTitle.substring(0, idx);
+          }
+        }
+        cleanTitle = cleanTitle.trim();
+        item.title = cleanTitle;
+
+        if (!seenTitles.contains(cleanTitle)) {
+          seenTitles.add(cleanTitle);
+          uniqueHits.add(item);
+        }
       }
+
+      // ステップ5: 残ったものを順番に表示して１０件を超える場合は１１位以降を排除する
+      final finalHitsCount = uniqueHits.length > 10 ? 10 : uniqueHits.length;
+      final finalHits = uniqueHits.sublist(0, finalHitsCount);
+
+      // 上位残ったものだけ日本語へ翻訳
+      for (int i = 0; i < finalHits.length; i++) {
+        final translated = await _translateToJapanese(finalHits[i].title);
+        finalHits[i].title = translated;
+      }
+
+      return finalHits;
     } catch (e) {
       print('XML parsing error: $e');
     }
