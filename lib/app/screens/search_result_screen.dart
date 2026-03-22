@@ -5,7 +5,7 @@ import 'package:genoru/app/widgets/dna_background.dart';
 /// 検索結果のモックモデル
 class SearchResultItem {
   final String accession;
-  final String title;
+  String title; // 外部APIで翻訳するためミュータブルに変更
   final double identity;
   final double coverage;
   final double eValue;
@@ -227,26 +227,6 @@ class SearchResultScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryGreen.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppTheme.primaryGreen.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Text(
-              'Accession: ${item.accession}',
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 13,
-                color: AppTheme.accentCyan,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -255,29 +235,20 @@ class SearchResultScreen extends StatelessWidget {
                 label: '一致率 (Identity)',
                 value: '${item.identity.toStringAsFixed(1)}%',
                 color: _getColorForPercentage(item.identity),
+                valueSize: 24,
+                labelSize: 12,
               ),
               Container(
                 width: 1,
-                height: 30,
+                height: 35,
                 color: AppTheme.textSecondary.withValues(alpha: 0.3),
               ),
               _buildStatMetric(
                 label: 'カバレッジ',
                 value: '${item.coverage.toStringAsFixed(1)}%',
                 color: _getColorForPercentage(item.coverage),
-              ),
-              Container(
-                width: 1,
-                height: 30,
-                color: AppTheme.textSecondary.withValues(alpha: 0.3),
-              ),
-              _buildStatMetric(
-                label: 'E-value',
-                value:
-                    item.eValue == 0.0
-                        ? '0.0'
-                        : item.eValue.toStringAsExponential(1),
-                color: AppTheme.textPrimary,
+                valueSize: 14,
+                labelSize: 10,
               ),
             ],
           ),
@@ -290,6 +261,8 @@ class SearchResultScreen extends StatelessWidget {
     required String label,
     required String value,
     required Color color,
+    double valueSize = 16,
+    double labelSize = 11,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,14 +271,14 @@ class SearchResultScreen extends StatelessWidget {
           label,
           style: TextStyle(
             color: AppTheme.textSecondary.withValues(alpha: 0.8),
-            fontSize: 11,
+            fontSize: labelSize,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: valueSize,
             fontWeight: FontWeight.w700,
             color: color,
             fontFamily: 'monospace',

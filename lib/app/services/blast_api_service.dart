@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import 'package:genoru/app/screens/search_result_screen.dart';
@@ -108,14 +109,14 @@ class BlastApiService {
       );
     }
 
-    return _parseXmlResults(response.body, queryLen: queryLen);
+    return await _parseXmlResults(response.body, queryLen: queryLen);
   }
 
   /// XML結果から [SearchResultItem] のリストを作成
-  List<SearchResultItem> _parseXmlResults(
+  Future<List<SearchResultItem>> _parseXmlResults(
     String xmlString, {
     int queryLen = 1,
-  }) {
+  }) async {
     final hits = <SearchResultItem>[];
 
     try {
@@ -164,16 +165,56 @@ class BlastApiService {
         }
       }
 
-      // カバレッジで降順、一致率で降順にソート（ncbi_api_test.pyと同じ）
+      // 1. まず全件をカバレッジで降順にソート（同率なら一致率降順）
       hits.sort((a, b) {
         final compCoverage = b.coverage.compareTo(a.coverage);
         if (compCoverage != 0) return compCoverage;
         return b.identity.compareTo(a.identity);
       });
+
+      // 2. 上位最大10件を取り出し、その中では一致率が高い順（同率ならカバレッジ降順）にソート
+      final topHitsCount = hits.length > 10 ? 10 : hits.length;
+      final topHits = hits.sublist(0, topHitsCount);
+      topHits.sort((a, b) {
+        final compIdentity = b.identity.compareTo(a.identity);
+        if (compIdentity != 0) return compIdentity;
+        return b.coverage.compareTo(a.coverage);
+      });
+
+      // 3. ソートし直した上位10件を元のリストの先頭に反映
+      hits.replaceRange(0, topHitsCount, topHits);
+
+      // 4. 上位最大10件のみ表示用に日本語へ翻訳（APIに過負荷をかけないため）
+      for (int i = 0; i < topHitsCount; i++) {
+        final translated = await _translateToJapanese(hits[i].title);
+        hits[i].title = translated;
+      }
     } catch (e) {
       print('XML parsing error: $e');
     }
     // 全件を返し、表示側で上位10件に絞る
     return hits;
+  }
+
+  /// Google Translate (非公式API) を用いて英語の生物名を日本語に翻訳
+  Future<String> _translateToJapanese(String text) async {
+    try {
+      final url = Uri.parse(
+        'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${Uri.encodeComponent(text)}',
+      );
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonRes = json.decode(response.body);
+        final List<dynamic> sentences = jsonRes[0];
+        String translatedText = '';
+        for (var s in sentences) {
+          translatedText += s[0].toString();
+        }
+        return translatedText;
+      }
+    } catch (e) {
+      print('Translation error: $e');
+    }
+    return text; // エラー時は元の英語をそのまま返す
   }
 }
