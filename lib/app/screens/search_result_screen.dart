@@ -289,9 +289,10 @@ class SearchResultScreen extends StatelessWidget {
   }
 
   Color _getColorForPercentage(double percentage) {
-    if (percentage >= 95) return const Color(0xFF4CAF50); // Green
-    if (percentage >= 80) return const Color(0xFFFFB300); // Amber
-    return const Color(0xFFE53935); // Red
+    if (percentage >= 100.0) return AppTheme.accentCyan; // 100%
+    if (percentage >= 90.0) return const Color(0xFF4CAF50); // 90~99% (Green)
+    if (percentage >= 80.0) return const Color(0xFFFFB300); // 80~89% (Amber)
+    return const Color(0xFFE53935); // 79%以下 (Red)
   }
 
   /// 配列の先頭と末尾を表示し、長い場合は中間を省略
