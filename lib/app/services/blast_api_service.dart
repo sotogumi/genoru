@@ -117,7 +117,7 @@ class BlastApiService {
     String xmlString, {
     int queryLen = 1,
   }) async {
-    final hits = <SearchResultItem>[];
+    final allHits = <SearchResultItem>[];
 
     try {
       final document = XmlDocument.parse(xmlString);
@@ -151,8 +151,8 @@ class BlastApiService {
           final coverage = queryLen > 0 ? (alignLen / queryLen) * 100 : 0.0;
           final clampedCoverage = coverage.clamp(0.0, 100.0);
 
-          if (clampedCoverage >= 80.0 && identityPct >= 80.0) {
-            hits.add(
+          if (clampedCoverage >= 80.0) {
+            allHits.add(
               SearchResultItem(
                 accession: accession,
                 title: title,
@@ -165,6 +165,16 @@ class BlastApiService {
         }
       }
 
+      // まずカバレッジ＆一致率両方80%以上のものを抽出
+      var hits = allHits.where((h) => h.identity >= 80.0).toList();
+      int limitCount = 10;
+
+      // 検索結果が０件だった場合のみ、カバレッジ80パーセントのものに緩和し、上位3つとする
+      if (hits.isEmpty) {
+        hits = allHits;
+        limitCount = 3;
+      }
+
       // ステップ1: カバレッジが高い順に並べる
       hits.sort((a, b) {
         final compCoverage = b.coverage.compareTo(a.coverage);
@@ -172,7 +182,7 @@ class BlastApiService {
         return b.identity.compareTo(a.identity);
       });
 
-      // ステップ2: 80%未満排除（パース時に if で処理済み）
+      // ステップ2: 80%未満排除（パース時に if で事前処理済み）
 
       // ステップ3: 残ったものの中で一致率が高い順に並べる
       hits.sort((a, b) {
@@ -219,8 +229,9 @@ class BlastApiService {
         }
       }
 
-      // ステップ5: 残ったものを順番に表示して１０件を超える場合は１１位以降を排除する
-      final finalHitsCount = uniqueHits.length > 10 ? 10 : uniqueHits.length;
+      // ステップ5: 残ったものを順番に表示してリミットを超える場合は排除する
+      final finalHitsCount =
+          uniqueHits.length > limitCount ? limitCount : uniqueHits.length;
       final finalHits = uniqueHits.sublist(0, finalHitsCount);
 
       // 上位残ったものだけ日本語へ翻訳
@@ -233,8 +244,8 @@ class BlastApiService {
     } catch (e) {
       print('XML parsing error: $e');
     }
-    // 全件を返し、表示側で上位10件に絞る
-    return hits;
+    // エラー時は空のリストを返す
+    return [];
   }
 
   /// Google Translate (非公式API) を用いて英語の生物名を日本語に翻訳
