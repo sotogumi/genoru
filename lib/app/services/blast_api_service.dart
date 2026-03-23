@@ -237,7 +237,7 @@ class BlastApiService {
       // 上位残ったものだけ日本語へ翻訳
       for (int i = 0; i < finalHits.length; i++) {
         final translated = await _translateToJapanese(finalHits[i].title);
-        finalHits[i].title = translated;
+        finalHits[i].translatedTitle = translated;
       }
 
       return finalHits;

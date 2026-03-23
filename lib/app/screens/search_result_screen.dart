@@ -6,7 +6,8 @@ import 'package:genoru/app/widgets/dna_background.dart';
 /// 検索結果のモックモデル
 class SearchResultItem {
   final String accession;
-  String title; // 外部APIで翻訳するためミュータブルに変更
+  String title; // 英語（学名）
+  String translatedTitle; // 日本語訳
   final double identity;
   final double coverage;
   final double eValue;
@@ -14,6 +15,7 @@ class SearchResultItem {
   SearchResultItem({
     required this.accession,
     required this.title,
+    this.translatedTitle = '',
     required this.identity,
     required this.coverage,
     required this.eValue,
@@ -216,14 +218,33 @@ class SearchResultScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                    height: 1.4,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title, // 英語名
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                        height: 1.4,
+                      ),
+                    ),
+                    if (item.translatedTitle.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          item.translatedTitle, // 日本語名
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textSecondary.withValues(
+                              alpha: 0.9,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               IconButton(
