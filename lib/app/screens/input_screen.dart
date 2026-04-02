@@ -75,11 +75,21 @@ class _InputScreenState extends State<InputScreen>
     }
 
     final dnaSequence = DnaConverter.convertToDna(text);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ResultScreen(inputText: text, dnaSequence: dnaSequence),
-      ),
-    );
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder:
+                (_) => ResultScreen(inputText: text, dnaSequence: dnaSequence),
+          ),
+        )
+        .then((_) {
+          if (!mounted) return;
+          _textController.clear();
+          setState(() {
+            _errorText = null;
+            _isButtonEnabled = false;
+          });
+        });
   }
 
   @override

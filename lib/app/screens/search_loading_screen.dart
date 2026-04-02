@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:genoru/app/screens/search_result_screen.dart';
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
@@ -66,6 +67,20 @@ class _SearchLoadingScreenState extends State<SearchLoadingScreen>
     });
 
     // TODO: ここで実際の BLAST 検索を開始し、完了したら結果画面へ遷移
+    _simulateSearchAndNavigate();
+  }
+
+  Future<void> _simulateSearchAndNavigate() async {
+    // API接続の代わりにダミーの待機時間を設ける
+    await Future.delayed(const Duration(seconds: 4));
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => SearchResultScreen(searchSequence: widget.dnaSequence),
+      ),
+    );
   }
 
   @override
