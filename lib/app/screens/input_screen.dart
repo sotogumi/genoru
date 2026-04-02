@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:genoru/app/screens/result_screen.dart';
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
@@ -12,7 +13,7 @@ class InputScreen extends StatefulWidget {
 class _InputScreenState extends State<InputScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
-  final int _maxLength = 100;
+  final int _maxLength = 200;
   String? _errorText;
   bool _isButtonEnabled = false;
 
@@ -72,7 +73,13 @@ class _InputScreenState extends State<InputScreen>
       return;
     }
 
-    // TODO: DNA変換・結果画面への遷移は別ブランチで実装
+    // TODO: ATGC変換ロジックを実装する
+    final dnaSequence = '';
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ResultScreen(inputText: text, dnaSequence: dnaSequence),
+      ),
+    );
   }
 
   @override
@@ -172,7 +179,7 @@ class _InputScreenState extends State<InputScreen>
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'DNAに変換したい文字列を入力',
+                                '文字列を入力',
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineMedium
@@ -311,7 +318,7 @@ class _InputScreenState extends State<InputScreen>
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              '個人情報は入力しないでください。',
+                              '個人情報は入力しないでください。\n同じ文字列は同じDNA配列に変換されます。',
                               style: TextStyle(
                                 color: AppTheme.textSecondary.withValues(
                                   alpha: 0.8,
