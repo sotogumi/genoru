@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
 /// 検索結果のモックモデル
 class SearchResultItem {
   final String accession;
-  final String title;
+  String title; // 英語（学名）
+  String translatedTitle; // 日本語訳
   final double identity;
   final double coverage;
   final double eValue;
@@ -13,6 +15,7 @@ class SearchResultItem {
   SearchResultItem({
     required this.accession,
     required this.title,
+    this.translatedTitle = '',
     required this.identity,
     required this.coverage,
     required this.eValue,
@@ -215,37 +218,41 @@ class SearchResultScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                    height: 1.4,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title, // 英語名
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                        height: 1.4,
+                      ),
+                    ),
+                    if (item.translatedTitle.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          item.translatedTitle, // 日本語名
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textSecondary.withValues(
+                              alpha: 0.9,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.search, color: AppTheme.accentCyan),
+                onPressed: () => _launchWebSearch(context, item.title),
+                tooltip: 'Webで検索',
+              ),
             ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryGreen.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppTheme.primaryGreen.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Text(
-              'Accession: ${item.accession}',
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 13,
-                color: AppTheme.accentCyan,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -255,29 +262,20 @@ class SearchResultScreen extends StatelessWidget {
                 label: '一致率 (Identity)',
                 value: '${item.identity.toStringAsFixed(1)}%',
                 color: _getColorForPercentage(item.identity),
+                valueSize: 24,
+                labelSize: 12,
               ),
               Container(
                 width: 1,
-                height: 30,
+                height: 35,
                 color: AppTheme.textSecondary.withValues(alpha: 0.3),
               ),
               _buildStatMetric(
                 label: 'カバレッジ',
                 value: '${item.coverage.toStringAsFixed(1)}%',
                 color: _getColorForPercentage(item.coverage),
-              ),
-              Container(
-                width: 1,
-                height: 30,
-                color: AppTheme.textSecondary.withValues(alpha: 0.3),
-              ),
-              _buildStatMetric(
-                label: 'E-value',
-                value:
-                    item.eValue == 0.0
-                        ? '0.0'
-                        : item.eValue.toStringAsExponential(1),
-                color: AppTheme.textPrimary,
+                valueSize: 14,
+                labelSize: 10,
               ),
             ],
           ),
@@ -290,6 +288,8 @@ class SearchResultScreen extends StatelessWidget {
     required String label,
     required String value,
     required Color color,
+    double valueSize = 16,
+    double labelSize = 11,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,14 +298,14 @@ class SearchResultScreen extends StatelessWidget {
           label,
           style: TextStyle(
             color: AppTheme.textSecondary.withValues(alpha: 0.8),
-            fontSize: 11,
+            fontSize: labelSize,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: valueSize,
             fontWeight: FontWeight.w700,
             color: color,
             fontFamily: 'monospace',
@@ -315,10 +315,28 @@ class SearchResultScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _launchWebSearch(BuildContext context, String query) async {
+    final url = Uri.parse(
+      'https://www.google.com/search?q=${Uri.encodeComponent(query)}',
+    );
+
+    try {
+      if (!await launchUrl(url)) {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Webブラウザを開けませんでした。')));
+    }
+  }
+
   Color _getColorForPercentage(double percentage) {
-    if (percentage >= 95) return const Color(0xFF4CAF50); // Green
-    if (percentage >= 80) return const Color(0xFFFFB300); // Amber
-    return const Color(0xFFE53935); // Red
+    if (percentage >= 100.0) return AppTheme.accentCyan; // 100%
+    if (percentage >= 90.0) return const Color(0xFF4CAF50); // 90~99% (Green)
+    if (percentage >= 80.0) return const Color(0xFFFFB300); // 80~89% (Amber)
+    return const Color(0xFFE53935); // 79%以下 (Red)
   }
 
   /// 配列の先頭と末尾を表示し、長い場合は中間を省略
