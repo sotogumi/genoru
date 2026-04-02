@@ -1,0 +1,9 @@
+{
+  "query_sequence": "ATGCTAGCTAGCTAGCTAGCTAGCTAGCTA",
+  "query_length": 30,
+  "job_id": "ncbiblast-R20260309-153335-0184-57042501-p1m",
+  "timestamp": "2026-03-10T00:41:24.273065",
+  "hits_count": 0,
+  "best_identity_pct": null,
+  "hits": []
+}

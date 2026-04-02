@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:genoru/app/screens/search_result_screen.dart';
+import 'package:genoru/app/services/blast_api_service.dart';
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
@@ -66,22 +67,79 @@ class _SearchLoadingScreenState extends State<SearchLoadingScreen>
       }
     });
 
-    // TODO: ここで実際の BLAST 検索を開始し、完了したら結果画面へ遷移
-    _simulateSearchAndNavigate();
+    _startBlastSearch();
   }
 
-  Future<void> _simulateSearchAndNavigate() async {
-    // API接続の代わりにダミーの待機時間を設ける
-    await Future.delayed(const Duration(seconds: 4));
+  Future<void> _startBlastSearch() async {
+    try {
+      final apiService = BlastApiService();
 
-    if (!mounted) return;
+      Future<List<SearchResultItem>> runBlast({bool isRelaxed = false}) async {
+        final jobId = await apiService.submitJob(
+          widget.dnaSequence,
+          isRelaxed: isRelaxed,
+        );
+        if (!mounted) return [];
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => SearchResultScreen(searchSequence: widget.dnaSequence),
-      ),
-    );
+        int retryCount = 0;
+        const maxRetries = 40; // 40 * 15s = 10分 (NCBIのジョブキューはより長いため)
+        String status = '';
+
+        while (retryCount < maxRetries) {
+          await Future.delayed(const Duration(seconds: 15)); // NCBI推奨のポーリング間隔
+          if (!mounted) return [];
+
+          status = await apiService.checkStatus(jobId);
+          if (status == 'FINISHED') break;
+          if (status == 'ERROR' ||
+              status == 'FAILURE' ||
+              status == 'NOT_FOUND') {
+            throw Exception('BLAST job failed with status: $status');
+          }
+          retryCount++;
+        }
+
+        if (status != 'FINISHED') throw Exception('BLAST job timed out');
+
+        if (!mounted) return [];
+        return await apiService.getResults(
+          jobId,
+          queryLen: widget.dnaSequence.length,
+        );
+      }
+
+      var results = await runBlast(isRelaxed: false);
+      if (!mounted) return;
+
+      if (results.isEmpty) {
+        // 通常検索でヒットなしの場合、短い配列でもヒットしやすいよう設定を緩和して再検索 (ncbi_api_test.py 準拠)
+        await Future.delayed(const Duration(seconds: 5));
+        results = await runBlast(isRelaxed: true);
+      }
+
+      if (!mounted) return;
+
+      // 4. 結果画面へ遷移
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder:
+              (_) => SearchResultScreen(
+                searchSequence: widget.dnaSequence,
+                results: results,
+              ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorOccurred = true;
+        _errorMessage = e.toString();
+      });
+    }
   }
+
+  bool _errorOccurred = false;
+  String _errorMessage = '';
 
   @override
   void dispose() {
@@ -93,6 +151,81 @@ class _SearchLoadingScreenState extends State<SearchLoadingScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_errorOccurred) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            const DnaBackground(),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppTheme.errorRed,
+                      size: 80,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      '現在こちらの検索はできません',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'APIのメンテナンス中、もしくは一時的なエラーが発生しています。時間をおいて再度お試しください。\n\n詳細: $_errorMessage',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        icon: const Icon(Icons.arrow_back_rounded, size: 22),
+                        label: const Text(
+                          '戻る',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.accentCyan,
+                          side: BorderSide(
+                            color: AppTheme.accentCyan.withValues(alpha: 0.5),
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       body: Stack(
         children: [
