@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:genoru/app/screens/result_screen.dart';
+import 'package:genoru/app/utils/dna_converter.dart';
 import 'package:genoru/app/theme/app_theme.dart';
 import 'package:genoru/app/widgets/dna_background.dart';
 
@@ -73,8 +74,7 @@ class _InputScreenState extends State<InputScreen>
       return;
     }
 
-    // TODO: ATGC変換ロジックを実装する
-    final dnaSequence = '';
+    final dnaSequence = DnaConverter.convertToDna(text);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ResultScreen(inputText: text, dnaSequence: dnaSequence),
