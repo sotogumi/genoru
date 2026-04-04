@@ -36,11 +36,7 @@ class BlastApiService {
       });
     }
 
-    final response = await http.post(
-      uri,
-      headers: {'User-Agent': '$_tool/1.0'},
-      body: body,
-    );
+    final response = await http.post(uri, body: body);
 
     if (response.statusCode == 200) {
       final resBody = response.body;
