@@ -66,7 +66,6 @@ class BlastApiService {
     final uri = Uri.parse(_baseUrl);
     final response = await http.post(
       uri,
-      headers: {'User-Agent': '$_tool/1.0'},
       body: {'CMD': 'Get', 'FORMAT_OBJECT': 'SearchInfo', 'RID': jobId},
     );
 
@@ -95,7 +94,6 @@ class BlastApiService {
     final uri = Uri.parse(_baseUrl);
     final response = await http.post(
       uri,
-      headers: {'User-Agent': '$_tool/1.0'},
       body: {'CMD': 'Get', 'FORMAT_TYPE': 'XML', 'RID': jobId},
     );
 
